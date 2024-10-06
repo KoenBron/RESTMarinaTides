@@ -8,6 +8,8 @@ class GroupSerializer(serializers.ModelSerializer):
         fields = ["name"]
 
 class UserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=True)
+    password2 = serializers.CharField(write_only=True)
     class Meta:
         model = User
         fields = ["pk", "username", "email", "password", "password2"]
@@ -24,8 +26,8 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
 class EmployeeSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
-    realtor = UserSerializer(read_only=True)
+    user = serializers.HyperlinkedRelatedField(many=False, read_only=True, view_name="user-rud")
+    realtor = serializers.HyperlinkedRelatedField(many=False, read_only=True, view_name="user-rud")
     class Meta:
         model = models.Employee
         fields = ["pk", "user", "realtor"]

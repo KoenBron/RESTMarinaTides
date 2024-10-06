@@ -1,19 +1,33 @@
 from django.shortcuts import render
 from django.contrib.auth.models import User, Group
 
-from .serializers import UserSerializer
+from .serializers import UserSerializer, EmployeeSerializer
 from .models import Employee
+from .permissions import IsAdminOrRealtor
 
 from rest_framework import generics
 from rest_framework import permissions
 from rest_framework import status
 from rest_framework.response import Response
 
-# Accepts get (list all users) and post(create 1 or more users) requests
+# Accepts get (list all users or all employees) and post(create 1 or more users) requests
 class UserListCreate(generics.ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsAdminOrRealtor]
     queryset = User.objects.all()
     serializer_class = UserSerializer
+
+    def list(self, request, *args, **kwargs):
+        # Admins can view all users
+        queryset = self.get_queryset()
+        serializer = UserSerializer(queryset, many=True)
+        
+        # Realtor can only see the users that are his employees
+        if not request.user.is_superuser:
+            queryset = Employee.objects.filter(realtor=request.user)
+            serializer = EmployeeSerializer(queryset, many=True, context={'request': self.request})
+
+
+        return Response(serializer.data)
 
     # Customize the create function for users, as realtors can create employee type users
     # and only the admins can create superusers.
