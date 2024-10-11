@@ -57,3 +57,17 @@ class UserRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticated]
     queryset = User.objects.all()
     serializer_class = UserSerializer
+
+    def get_queryset(self):
+        # If user is a realtor, it has access to the user accounts of all its employees
+        if self.request.user.has_perm("auth.realtor"):
+            # Generate list of employee ids and realtor user id
+            id_list = list(Employee.objects.filter(realtor=self.request.user).values_list('user_id', flat=True))
+            id_list.append(self.request.user.id)
+            
+            # Generate queryset
+            return User.objects.filter(pk__in=id_list)
+
+        return User.objects.filter(self.request.user)
+
+
