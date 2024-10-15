@@ -1,5 +1,5 @@
 from account.permissions import IsAdminOrRealtor
-from .serializers import AddBoatToEmployeeSerializer, BoatSerializer, CustomerSerializer, RemoveEmployeesFromBoatSerializer
+from .serializers import AddBoatToEmployeeSerializer, BoatSerializer, CustomerSerializer, RemoveEmployeesFromBoatSerializer, LinkBoatToCustomerSerializer, RemoveLinkBoatToCustomerSerializer
 from .models import Boat, Customer
 from account.models import Employee
 
@@ -178,18 +178,60 @@ class RemoveEmployeesFromBoatView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class LinkBoatToUser(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = Boat.objects.all()
+    serializer_class = LinkBoatToCustomerSerializer
 
+    def get_object(self, request, pk):
+        # Make sure the boat exists
+        try:
+            boat = Boat.objects.get(pk=pk)
+        except Boat.DoesNotExist:
+            raise NotFound
 
+        # Make sure the user has access to this boat
+        if boat.users.filter(pk=request.user.pk).exists():
+            return boat
+            
+        else:
+            raise PermissionDenied
 
+    def put(self, request, pk, format=None):
+        boat = self.get_object(request, pk)
+        serializer = LinkBoatToCustomerSerializer(boat, data=request.data, context={"request": request})
 
+        if serializer.is_valid():
+            boat_updated = serializer.save()
+            return Response(BoatSerializer(boat_updated).data)
 
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class RemoveLinkBoatToUser(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = Boat.objects.all()
+    serializer_class = RemoveLinkBoatToCustomerSerializer
 
+    def get_object(self, request, pk):
+        # Make sure the boat exists
+        try:
+            boat = Boat.objects.get(pk=pk)
+        except Boat.DoesNotExist:
+            raise NotFound
 
+        # Make sure the user has access to this boat
+        if boat.users.filter(pk=request.user.pk).exists():
+            return boat
+            
+        else:
+            raise PermissionDenied
 
+    def put(self, request, pk, format=None):
+        boat = self.get_object(request, pk)
+        serializer = RemoveLinkBoatToCustomerSerializer(boat, data=request.data, context={"request": request})
 
+        if serializer.is_valid():
+            boat_updated = serializer.save()
+            return Response(BoatSerializer(boat_updated).data)
 
-
-
-
-
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

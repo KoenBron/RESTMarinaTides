@@ -68,3 +68,48 @@ class RemoveEmployeesFromBoatSerializer(serializers.ModelSerializer):
     class Meta:
         model = Boat 
         fields = ["employees"]
+
+class LinkBoatToCustomerSerializer(serializers.ModelSerializer):
+    customer = serializers.PrimaryKeyRelatedField(queryset=Customer.objects.all(), many=False, write_only=True)
+
+    def update(self, instance, validated_data, *args, **kwargs):
+        customer = validated_data.pop["customer"]
+        request = self.context.get("request")
+
+        # Update the customer related to the boat, but check if the boat is accessible to the request user
+        # Admins can get around this restriction
+        if request.user.is_superuser or customer.users.filter(pk=request.user.pk).exists():
+            instance.customer = customer
+
+        else:
+            raise PermissionDenied
+
+        instance.save()
+        return instance
+
+
+    class Meta:
+        model = Boat
+        fields = ["boat", "customer"]
+         
+class RemoveLinkBoatToCustomerSerializer(serializers.ModelSerializer):
+
+    def update(self, instance, validated_data, *args, **kwargs):
+        customer = validated_data.pop["customer"]
+        request = self.context.get("request")
+
+        # Update the customer related to the boat, but check if the boat is accessible to the request user
+        # Admins can get around this restriction
+        if request.user.is_superuser or customer.users.filter(pk=request.user.pk).exists():
+            instance.customer = None
+
+        else:
+            raise PermissionDenied
+
+        instance.save()
+        return instance
+
+
+    class Meta:
+        model = Boat
+        fields = ["boat", "customer"]
