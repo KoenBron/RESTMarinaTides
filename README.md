@@ -27,4 +27,13 @@ Then run the django server:
 
     $ python3 manage.py runserver
 
+## Documentation
 
+You can view the documentation in the OpenAI 3.0 format for all endpoints and schemas by running the django server and navigating to either of the following endpoints: 
+
+    - `api/docs/`
+    - `api/schema/`
+
+To generate the YAML file associated with the schemas, run this command:
+
+    $ manage.py spectacular --color --file schema.yml
