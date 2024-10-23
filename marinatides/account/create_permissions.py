@@ -4,10 +4,12 @@ from django.contrib.contenttypes.models import ContentType
 
 if __name__ == "__main__":
     content_type = ContentType.objects.get_for_model(User)
-    data = [{"codename": "realtor", "name": "Realtor", "content_type": content_type},{"codename": "employee", "name": "Employee", "content_type": content_type} ]
+    permission_data = [{"codename": "realtor", "name": "Realtor", "content_type": content_type},{"codename": "employee", "name": "Employee", "content_type": content_type} ]
 
+    permissions = []
     # Create the permissions
-    permissions = Permission.objects.create(**data)
+    for data in permission_data:
+        permissions.append(Permission.objects.create(**data))
 
     # Retrieve the groups
     realtors = Group.objects.get(name="Realtors")
