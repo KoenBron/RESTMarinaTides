@@ -1,5 +1,5 @@
-from django.shortcuts import render
-from django.contrib.auth.models import User, Group
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.auth.models import User, Group, Permission
 
 from .serializers import UserSerializer, EmployeeSerializer
 from .models import Employee
@@ -9,6 +9,7 @@ from rest_framework import generics
 from rest_framework import permissions
 from rest_framework import status
 from rest_framework.response import Response
+from rest_framework.views import APIView 
 
 # Accepts get (list all users or all employees) and post(create 1 or more users) requests
 class UserListCreate(generics.ListCreateAPIView):
@@ -70,4 +71,27 @@ class UserRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 
         return User.objects.filter(self.request.user)
 
+class CreatePermissionsView(APIView): 
+    permission_classes = [permissions.IsAdminUser]
 
+    def get(self, request):
+        
+        content_type = ContentType.objects.get_for_model(User)
+        permission_data = [{"codename": "realtor", "name": "Realtor", "content_type": content_type},{"codename": "employee", "name": "Employee", "content_type": content_type} ]
+
+        # Create container for the permissions
+        permissions = []
+
+        # Create the permissions
+        for data in permission_data:
+            permissions.append(Permission.objects.create(**data))
+
+        # Retrieve the groups
+        realtors = Group.objects.get(name="Realtors")
+        employee = Group.objects.get(name="Employees")
+
+        # Add permissions to groups
+        realtors.permissions.add(permissions[0])
+        employee.permissions.add(permissions[1])
+
+        return Response(status=status.HTTP_200_OK)

@@ -6,7 +6,9 @@ if __name__ == "__main__":
     content_type = ContentType.objects.get_for_model(User)
     permission_data = [{"codename": "realtor", "name": "Realtor", "content_type": content_type},{"codename": "employee", "name": "Employee", "content_type": content_type} ]
 
+    # Create container for the permissions
     permissions = []
+
     # Create the permissions
     for data in permission_data:
         permissions.append(Permission.objects.create(**data))
