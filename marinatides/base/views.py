@@ -8,7 +8,7 @@ from rest_framework import permissions
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.exceptions import NotFound, PermissionDenied, NotFound
+from rest_framework.exceptions import AuthenticationFailed, NotFound, PermissionDenied, NotFound
 
 
 # Create your views here.
@@ -30,15 +30,23 @@ class BoatListCreate(generics.ListCreateAPIView):
         if serializer.is_valid(): 
             # Create the boat
             boat_object = serializer.save()
-            boat_object.users.add(request.user)
+            # Superusers require no checking on the users associated with the boat
+            if not request.user.is_superuser:
+                boat_object.users.add(request.user)
 
-            # If the user is an employee than also add the realtor associated with that employee
-            if request.user.has_perm("auth.employee"):
-                realtor = Employee.objects.filter(user=request.user).first().realtor
-                boat_object.users.add(realtor)
+                # If the user is an employee than also add the realtor associated with that employee
+                if request.user.has_perm("auth.employee"):
+                    try:
+                        realtor = Employee.objects.filter(user=request.user).first().realtor
 
-            # Save updated object to the 
-            boat_object.save()
+                    except:
+                        raise AuthenticationFailed(detail="This account is not registered as a known employee account.")
+
+                    boat_object.users.add(realtor)
+
+                # Save updated object to the 
+                boat_object.save()
+
             return Response(data=BoatSerializer(boat_object).data)
 
         # Bad request data
@@ -77,14 +85,19 @@ class CustomerListCreate(generics.ListCreateAPIView):
 
         if serializer.is_valid():
             customer_object = serializer.save()
-            customer_object.users.add(request.user)
-            
-            # If the user is an employee than also add the realtor
-            if request.user.has_perm("auth.employee"):
-                realtor = Employee.objects.filter(user=request.user).first().realtor
-                customer_object.users.add(realtor)
 
-            # Save the object
+            if not request.user.is_superuser():
+                customer_object.users.add(request.user)
+                
+                # If the user is an employee than also add the realtor
+                if request.user.has_perm("auth.employee"):
+                    try: 
+                        realtor = Employee.objects.filter(user=request.user).first().realtor
+                    except:
+                        raise AuthenticationFailed(detail="This account is not registered as a known employee account.")
+                    customer_object.users.add(realtor)
+
+                # Save the object
             customer_object.save()
             return Response(data=CustomerSerializer(customer_object).data)
         
