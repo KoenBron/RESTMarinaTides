@@ -94,4 +94,4 @@ class CreatePermissionsView(APIView):
         realtors.permissions.add(permissions[0])
         employee.permissions.add(permissions[1])
 
-        return Response(status=status.HTTP_200_OK)
+        return Response({'message': 'Succesfully created the permissions and added them to the groups!'}, status=status.HTTP_200_OK)

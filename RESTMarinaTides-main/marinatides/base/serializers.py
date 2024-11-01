@@ -28,6 +28,13 @@ class CustomerSerializer(serializers.ModelSerializer):
 'name_option', 
 'option_list']
 
+class GetCustomerSerializer(serializers.ModelSerializer):
+    users = serializers.PrimaryKeyRelatedField(many=True, read_only=True)# Many-to-many, i.e. all user that have acces tot this boat
+    
+    class Meta:
+        model = Customer
+        fields = ["pk", "users", "first_name", "last_name"]
+
 class BoatSerializer(serializers.ModelSerializer):
     users = serializers.PrimaryKeyRelatedField(many=True, read_only=True)# Many-to-many, i.e. all user that have acces tot this boat
     customer = CustomerSerializer(many=False, read_only=True)# One-to-one, i.e. the customer assigned to this boat
@@ -167,6 +174,13 @@ class BoatSerializer(serializers.ModelSerializer):
     'bimini', "cover_photo", "gallery_photo", "video_url",
  "users", "customer"]
 
+class GetBoatSerializer(serializers.ModelSerializer):
+    users = serializers.PrimaryKeyRelatedField(many=True, read_only=True)# Many-to-many, i.e. all user that have acces tot this boat
+    customer = serializers.PrimaryKeyRelatedField(many=False, read_only=True)# Many-to-many, i.e. all user that have acces tot this boat
+    class Meta:
+        model = Boat
+        fields = ["pk", "users", "customer"]
+
 class AddBoatToEmployeeSerializer(serializers.ModelSerializer):
     employees = serializers.PrimaryKeyRelatedField(queryset=Employee.objects.all(), many=True, write_only=True)
 
@@ -220,12 +234,21 @@ class LinkBoatToCustomerSerializer(serializers.ModelSerializer):
     customer = serializers.PrimaryKeyRelatedField(queryset=Customer.objects.all(), many=False, write_only=True)
 
     def update(self, instance, validated_data, *args, **kwargs):
-        customer = validated_data.pop["customer"]
+        customer = validated_data.pop("customer")
         request = self.context.get("request")
+
+        # If the request user is an employee, then check if the realtor connected to the employee has access to then
+        # customer object
+        filter_user = request.user
+        if not request.user.is_superuser and request.user.has_perm("auth.employee"):
+            try:
+                filter_user = Employee.objects.get(user=filter_user).realtor
+            except Employee.DoesNotExist:
+                raise PermissionDenied
 
         # Update the customer related to the boat, but check if the boat is accessible to the request user
         # Admins can get around this restriction
-        if request.user.is_superuser or customer.users.filter(pk=request.user.pk).exists():
+        if request.user.is_superuser or customer.users.filter(pk=filter_user.pk).exists():
             instance.customer = customer
 
         else:
@@ -242,12 +265,21 @@ class LinkBoatToCustomerSerializer(serializers.ModelSerializer):
 class RemoveLinkBoatToCustomerSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data, *args, **kwargs):
-        customer = validated_data.pop["customer"]
+        customer = validated_data.pop("customer")
         request = self.context.get("request")
+
+        # If the request user is an employee, then check if the realtor connected to the employee has access to then
+        # customer object
+        filter_user = request.user
+        if not request.user.is_superuser and request.user.has_perm("auth.employee"):
+            try:
+                filter_user = Employee.objects.get(user=filter_user).realtor
+            except Employee.DoesNotExist:
+                raise PermissionDenied
 
         # Update the customer related to the boat, but check if the boat is accessible to the request user
         # Admins can get around this restriction
-        if request.user.is_superuser or customer.users.filter(pk=request.user.pk).exists():
+        if request.user.is_superuser or customer.users.filter(pk=filter_user.pk).exists():
             instance.customer = None
 
         else:

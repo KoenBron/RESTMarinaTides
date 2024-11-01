@@ -1,5 +1,5 @@
 from account.permissions import IsAdminOrRealtor
-from .serializers import AddBoatToEmployeeSerializer, BoatSerializer, CustomerSerializer, RemoveEmployeesFromBoatSerializer, LinkBoatToCustomerSerializer, RemoveLinkBoatToCustomerSerializer, AvailableCustomerSerializer
+from . import serializers
 from .models import Boat, Customer
 from account.models import Employee
 
@@ -15,7 +15,13 @@ from rest_framework.exceptions import AuthenticationFailed, NotFound, Permission
 class BoatListCreate(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     queryset = Boat.objects.all()
-    serializer_class = BoatSerializer
+    serializer_class = serializers.BoatSerializer
+
+    # Sending all detail when listing is too much data, so the GetBoatSerializer retrieves only essential info
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return serializers.BoatSerializer
+        return serializers.GetBoatSerializer
 
     def get_queryset(self):
         if self.request.user.is_superuser:
@@ -25,7 +31,7 @@ class BoatListCreate(generics.ListCreateAPIView):
 
     # Employees and realtors can create boats, only 
     def create(self, request, *args, **kwargs):
-        serializer = BoatSerializer(data=request.data)
+        serializer = serializers.BoatSerializer(data=request.data)
 
         if serializer.is_valid(): 
             # Create the boat
@@ -47,7 +53,7 @@ class BoatListCreate(generics.ListCreateAPIView):
                 # Save updated object to the 
                 boat_object.save()
 
-            return Response(data=BoatSerializer(boat_object).data)
+            return Response(data=serializers.BoatSerializer(boat_object).data)
 
         # Bad request data
         else:
@@ -56,7 +62,7 @@ class BoatListCreate(generics.ListCreateAPIView):
 class BoatRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticated]
     queryset = Boat.objects.all()
-    serializer_class = BoatSerializer
+    serializer_class = serializers.BoatSerializer
 
     def get_queryset(self):
         return Boat.objects.filter(users=self.request.user)
@@ -65,7 +71,14 @@ class BoatRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 class CustomerListCreate(generics.ListCreateAPIView):
     permission_classes =[permissions.IsAuthenticated]
     queryset = Customer.objects.all()
-    serializer_class = CustomerSerializer
+    serializer_class = serializers.CustomerSerializer
+
+    # Sending all detail when listing is too much data, so the GetCustomerSerializer retrieves only essential info
+    def get_serializer_class(self):
+        if self.request.method == "POST": 
+            return serializers.CustomerSerializer
+        else:
+            return serializers.GetCustomerSerializer
 
     def get_queryset(self):
         if self.request.user.is_superuser:
@@ -81,7 +94,7 @@ class CustomerListCreate(generics.ListCreateAPIView):
             return Customer.objects.filter(users=filter_user)
 
     def create(self, request, *args, **kwargs):
-        serializer = CustomerSerializer(data=request.data)
+        serializer = serializers.CustomerSerializer(data=request.data)
 
         if serializer.is_valid():
             customer_object = serializer.save()
@@ -99,7 +112,7 @@ class CustomerListCreate(generics.ListCreateAPIView):
 
                 # Save the object
             customer_object.save()
-            return Response(data=CustomerSerializer(customer_object).data)
+            return Response(data=serializers.CustomerSerializer(customer_object).data)
         
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -108,7 +121,7 @@ class CustomerListCreate(generics.ListCreateAPIView):
 class CustomerRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticated]
     queryset = Customer.objects.all()
-    serializer_class = CustomerSerializer
+    serializer_class = serializers.CustomerSerializer
 
     def get_queryset(self):
         return Customer.objects.filter(users=self.request.user)
@@ -117,7 +130,7 @@ class CustomerRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 class AddEmployeesToBoatView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsAdminOrRealtor]
     queryset = Boat.objects.all()
-    serializer_class = AddBoatToEmployeeSerializer
+    serializer_class = serializers.AddBoatToEmployeeSerializer
 
     def get_queryset(self):
         return Boat.objects.filter(users=self.request.user)
@@ -139,17 +152,17 @@ class AddEmployeesToBoatView(APIView):
 
     def get(self, request, pk, *args, **kwargs):
         boat = self.get_object(request, pk)
-        return Response(BoatSerializer(boat).data)
+        return Response(serializers.BoatSerializer(boat).data)
 
     def put(self, request, pk, format=None):
         boat = self.get_object(request, pk)
 
         # Let the serializer update the boat, update function in serializer is called in save() method because boat instance is present
-        serializer = AddBoatToEmployeeSerializer(boat, data=request.data, context={"request": request})
+        serializer = serializers.AddBoatToEmployeeSerializer(boat, data=request.data, context={"request": request})
 
         if serializer.is_valid():
             boat_updated = serializer.save()
-            return Response(BoatSerializer(boat_updated).data)
+            return Response(serializers.BoatSerializer(boat_updated).data)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -157,7 +170,7 @@ class AddEmployeesToBoatView(APIView):
 class RemoveEmployeesFromBoatView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsAdminOrRealtor]
     queryset = Boat.objects.all()
-    serializer_class = RemoveEmployeesFromBoatSerializer
+    serializer_class = serializers.RemoveEmployeesFromBoatSerializer
 
     def get_queryset(self):
         return Boat.objects.filter(users=self.request.user)
@@ -178,24 +191,24 @@ class RemoveEmployeesFromBoatView(APIView):
 
     def get(self, request, pk, *args, **kwargs):
         boat = self.get_object(request, pk)
-        return Response(BoatSerializer(boat).data)
+        return Response(serializers.BoatSerializer(boat).data)
 
     def put(self, request, pk, format=None):
         boat = self.get_object(request, pk)
 
         # Let the serializer update the boat, update function in serializer is called in save() method because boat instance is present
-        serializer = RemoveEmployeesFromBoatSerializer(boat, data=request.data, context={"request": request})
+        serializer = serializers.RemoveEmployeesFromBoatSerializer(boat, data=request.data, context={"request": request})
 
         if serializer.is_valid():
             boat_updated = serializer.save()
-            return Response(BoatSerializer(boat_updated).data)
+            return Response(serializers.BoatSerializer(boat_updated).data)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class LinkBoatToCustomer(APIView):
     permission_classes = [permissions.IsAuthenticated]
     queryset = Boat.objects.all()
-    serializer_class = LinkBoatToCustomerSerializer
+    serializer_class = serializers.LinkBoatToCustomerSerializer
 
     def get_object(self, request, pk):
         # Make sure the boat exists
@@ -213,18 +226,18 @@ class LinkBoatToCustomer(APIView):
 
     def put(self, request, pk, format=None):
         boat = self.get_object(request, pk)
-        serializer = LinkBoatToCustomerSerializer(boat, data=request.data, context={"request": request})
+        serializer = serializers.LinkBoatToCustomerSerializer(boat, data=request.data, context={"request": request})
 
         if serializer.is_valid():
             boat_updated = serializer.save()
-            return Response(BoatSerializer(boat_updated).data)
+            return Response(serializers.BoatSerializer(boat_updated).data)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class RemoveLinkBoatToCustomer(APIView):
     permission_classes = [permissions.IsAuthenticated]
     queryset = Boat.objects.all()
-    serializer_class = RemoveLinkBoatToCustomerSerializer
+    serializer_class = serializers.RemoveLinkBoatToCustomerSerializer
 
     def get_object(self, request, pk):
         # Make sure the boat exists
@@ -242,22 +255,22 @@ class RemoveLinkBoatToCustomer(APIView):
 
     def put(self, request, pk, format=None):
         boat = self.get_object(request, pk)
-        serializer = RemoveLinkBoatToCustomerSerializer(boat, data=request.data, context={"request": request})
+        serializer = serializers.RemoveLinkBoatToCustomerSerializer(boat, data=request.data, context={"request": request})
 
         if serializer.is_valid():
             boat_updated = serializer.save()
-            return Response(BoatSerializer(boat_updated).data)
+            return Response(serializers.BoatSerializer(boat_updated).data)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class AvailableCustomers(APIView):
     permission_classes = [permissions.IsAuthenticated]
     queryset = Customer.objects.all()
-    serializer_class = AvailableCustomerSerializer
+    serializer_class = serializers.AvailableCustomerSerializer
 
     def get(self, request, format=None):
         if request.user.is_superuser:
-            return Response(CustomerSerializer(Customer.objects.all(), many=True).data)
+            return Response(serializers.CustomerSerializer(Customer.objects.all(), many=True).data)
         
         else:
             filter_user = request.user# User to search available customers for
@@ -271,4 +284,4 @@ class AvailableCustomers(APIView):
                     raise AuthenticationFailed(detail="Medewerkeers account niet gevonden!")
 
             available_customers = Customer.objects.filter(users=filter_user)
-            return Response(AvailableCustomerSerializer(available_customers, many=True).data)
+            return Response(serializers.AvailableCustomerSerializer(available_customers, many=True).data)
