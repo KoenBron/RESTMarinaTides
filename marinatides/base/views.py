@@ -191,7 +191,7 @@ class RemoveEmployeesFromBoatView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class LinkBoatToUser(APIView):
+class LinkBoatToCustomer(APIView):
     permission_classes = [permissions.IsAuthenticated]
     queryset = Boat.objects.all()
     serializer_class = LinkBoatToCustomerSerializer
@@ -220,7 +220,7 @@ class LinkBoatToUser(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class RemoveLinkBoatToUser(APIView):
+class RemoveLinkBoatToCustomer(APIView):
     permission_classes = [permissions.IsAuthenticated]
     queryset = Boat.objects.all()
     serializer_class = RemoveLinkBoatToCustomerSerializer
