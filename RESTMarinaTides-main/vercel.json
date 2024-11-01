@@ -1,0 +1,7 @@
+{
+    "functions": {
+        "marinatides/**/*.py": {
+            "runtime": "python3.8"
+        }
+    }
+}
