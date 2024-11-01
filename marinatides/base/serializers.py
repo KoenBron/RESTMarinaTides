@@ -90,7 +90,7 @@ class LinkBoatToCustomerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Boat
-        fields = ["boat", "customer"]
+        fields = ["customer"]
          
 class RemoveLinkBoatToCustomerSerializer(serializers.ModelSerializer):
 
@@ -112,7 +112,7 @@ class RemoveLinkBoatToCustomerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Boat
-        fields = ["boat", "customer"]
+        fields = ["customer"]
 
 class AvailableCustomerSerializer(serializers.ModelSerializer):
     class Meta:
