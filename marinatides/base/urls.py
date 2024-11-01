@@ -11,6 +11,7 @@ urlpatterns = [
     path("removeboat/<int:pk>/", views.RemoveEmployeesFromBoatView.as_view(), name="removeemployeesfromboat"),
     path("linkboat/<int:pk>/", views.LinkBoatToCustomer.as_view(), name="linkboat"),
     path("delinkboat/<int:pk>/", views.RemoveLinkBoatToCustomer.as_view(), name="delinkboat"),
+    path("availablecustomers", views.AvailableCustomers.as_view(), name="availablecustomers")
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)

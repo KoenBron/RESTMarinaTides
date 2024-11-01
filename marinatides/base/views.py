@@ -1,5 +1,5 @@
 from account.permissions import IsAdminOrRealtor
-from .serializers import AddBoatToEmployeeSerializer, BoatSerializer, CustomerSerializer, RemoveEmployeesFromBoatSerializer, LinkBoatToCustomerSerializer, RemoveLinkBoatToCustomerSerializer
+from .serializers import AddBoatToEmployeeSerializer, BoatSerializer, CustomerSerializer, RemoveEmployeesFromBoatSerializer, LinkBoatToCustomerSerializer, RemoveLinkBoatToCustomerSerializer, AvailableCustomerSerializer
 from .models import Boat, Customer
 from account.models import Employee
 
@@ -248,3 +248,26 @@ class RemoveLinkBoatToCustomer(APIView):
             return Response(BoatSerializer(boat_updated).data)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class AvailableCustomers(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = Customer.objects.all()
+    serializer_class = AvailableCustomerSerializer
+
+    def get(self, request, format=None):
+        if request.user.is_superuser:
+            return Response(CustomerSerializer(Customer.objects.all(), many=True).data)
+        
+        else:
+            filter_user = request.user# User to search available customers for
+
+            # If employee, get all the customers of the realtor they are associated with
+            if request.user.has_perm("auth.employee"):
+                # Find the realtor objects and filter based on that
+                try:
+                    filter_user = Employee.objects.filter(user=request.user).first().realtor
+                except:
+                    raise AuthenticationFailed(detail="Medewerkeers account niet gevonden!")
+
+            available_customers = Customer.objects.filter(users=filter_user)
+            return Response(AvailableCustomerSerializer(available_customers, many=True).data)

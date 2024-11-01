@@ -113,3 +113,8 @@ class RemoveLinkBoatToCustomerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Boat
         fields = ["boat", "customer"]
+
+class AvailableCustomerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Customer
+        fields = ["pk", "first_name", "last_name"]
